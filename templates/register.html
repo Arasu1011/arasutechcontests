@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Register - Arasutechcontests</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+
+<div class="container mt-5">
+    <div class="card p-4 shadow-lg rounded-4">
+        
+        <h2 class="text-center mb-4 text-primary">Registration Form</h2>
+
+        <form method="POST" enctype="multipart/form-data">
+
+            <input class="form-control mb-3" type="text" name="name" placeholder="Student Name" required>
+
+            <input class="form-control mb-3" type="text" name="grade" placeholder="Grade" required>
+
+            <input class="form-control mb-3" type="text" name="school" placeholder="School Name" required>
+
+            <input class="form-control mb-3" type="email" name="email" placeholder="Email" required>
+
+            <!-- FILE UPLOAD -->
+            <label class="form-label"><strong>Upload Your Work</strong></label>
+
+            <input class="form-control mb-2" 
+                   type="file" 
+                   name="file" 
+                   accept=".jpg,.jpeg,.png,.pdf"
+                   onchange="showFileName(this)"
+                   required>
+
+            <p id="fileName" class="text-muted small"></p>
+
+            <small class="text-muted mb-3 d-block">
+                Upload handwriting, drawing, or essay writing documents (JPG, PNG, PDF, max 2MB)
+            </small>
+
+            <!-- TRUST MESSAGE -->
+            <p class="text-success text-center small">
+                🔒 Secure registration • Easy payment • Certificate provided
+            </p>
+
+            <button class="btn btn-primary w-100">
+                Submit & Pay ₹500
+            </button>
+
+        </form>
+    </div>
+</div>
+
+<!-- SCRIPT -->
+<script>
+function showFileName(input) {
+    if (input.files.length > 0) {
+        let file = input.files[0];
+
+        // File size check (2MB)
+        if (file.size > 2 * 1024 * 1024) {
+            alert("File size should be less than 2MB");
+            input.value = "";
+            document.getElementById('fileName').innerText = "";
+            return;
+        }
+
+        document.getElementById('fileName').innerText = "Selected file: " + file.name;
+    }
+}
+</script>
+
+</body>
+</html>

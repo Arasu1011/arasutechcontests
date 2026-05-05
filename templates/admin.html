@@ -1,0 +1,25 @@
+<h2>Participants</h2>
+
+<table border="1">
+<tr>
+    <th>Name</th>
+    <th>Grade</th>
+    <th>School</th>
+    <th>Email</th>
+    <th>File</th>
+</tr>
+
+{% for row in data %}
+<tr>
+    <td>{{ row[1] }}</td>
+    <td>{{ row[2] }}</td>
+    <td>{{ row[3] }}</td>
+    <td>{{ row[4] }}</td>
+    <td>{{ row[5] }}</td>
+</tr>
+{% endfor %}
+
+</table>
+<td>
+    <a href="/generate/{{ row[0] }}">Generate Certificate</a>
+</td>

@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="container mt-5">
+  <div class="row align-items-center">
+
+    <div class="col-md-6">
+      <h1 class="fw-bold">
+        Online Competitions for Kids – Learn, Compete & Shine!
+      </h1>
+
+      <p class="mt-3">
+        Join Arasutech Global Handwriting Championship and showcase your talent worldwide.
+      </p>
+
+      <a href="/register" class="btn btn-danger mt-3">Register Now</a>
+      <a href="/competitions" class="btn btn-outline-dark mt-3">View Competitions</a>
+    </div>
+
+    <div class="col-md-6 text-center">
+      <img src="{{ url_for('static', filename='images/kids.jpg') }}" class="img-fluid rounded">
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}
