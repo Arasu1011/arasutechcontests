@@ -1,6 +1,7 @@
-from flask import Flask, render_template, request, redirect
-import sqlite3
+from flask import Flask, render_template, request, redirect, Response, send_file
 import os
+import psycopg2
+import threading
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -8,88 +9,59 @@ from email.mime.base import MIMEBase
 from email import encoders
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
+import pandas as pd
 
 app = Flask(__name__)
 
-UPLOAD_FOLDER = 'uploads'
-CERT_FOLDER = 'certificates'
+UPLOAD_FOLDER = "uploads"
+CERT_FOLDER = "certificates"
 
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-# ✅ Create folders
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(CERT_FOLDER, exist_ok=True)
 
-# ---------------- DATABASE ---------------- #
+# ================= DATABASE (SUPABASE POSTGRES) ================= #
+import psycopg2
 
-def init_db():
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS participants (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT,
-            grade TEXT,
-            school TEXT,
-            email TEXT,
-            filename TEXT,
-            cert_file TEXT
-        )
-    ''')
-    conn.commit()
-    conn.close()
-
-init_db()
-
-# ---------------- EMAIL ---------------- #
-
-import threading
-import os
+def get_db():
+    return psycopg2.connect(
+        "postgresql://postgres.rngdjfuywdsyxrhbyvxn:Arasu%401011%23vinay@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres",
+        sslmode="require"
+    )
+# ================= EMAIL ================= #
 
 SENDER_EMAIL = os.getenv("SENDER_EMAIL")
 SENDER_PASSWORD = os.getenv("SENDER_PASSWORD")
 
 def send_email_async(to_email, name):
     try:
-        message = f"""
+        msg_text = f"""
 Dear {name},
 
-🎉 Thank you for registering for Arasutechcontests.
+🎉 Registration received successfully.
 
-We have received your registration successfully.
-
-💰 Initial payment of ₹1 is for testing/demo purpose.
-
-⚠️ To confirm your participation:
-Please complete the remaining registration amount.
-
-Your entry will be considered valid only after full payment is completed.
-
-We will contact you shortly with further instructions.
+Please complete payment to confirm participation.
 
 Regards,
-Arasutechcontests Team
-📧 arasutechcontests@gmail.com
-📞 9092196653
+Arasutech Global Team
 """
 
-        msg = MIMEText(message)
-        msg['Subject'] = "Registration Received - Payment Pending"
+        msg = MIMEText(msg_text)
+        msg['Subject'] = "Registration Received"
         msg['From'] = SENDER_EMAIL
         msg['To'] = to_email
 
-        with smtplib.SMTP('smtp.gmail.com', 587, timeout=10) as server:
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
             server.starttls()
             server.login(SENDER_EMAIL, SENDER_PASSWORD)
             server.send_message(msg)
 
     except Exception as e:
-        print("Email failed:", e)
-        
+        print("Email error:", e)
+
 def send_email(to_email, name):
     threading.Thread(target=send_email_async, args=(to_email, name)).start()
 
-# ---------------- CERTIFICATE ---------------- #
+# ================= CERTIFICATE ================= #
 
 def generate_certificate(name):
     file_path = os.path.join(CERT_FOLDER, f"{name}.pdf")
@@ -99,65 +71,54 @@ def generate_certificate(name):
 
     content = []
 
-    content.append(Paragraph("CERTIFICATE OF ACHIEVEMENT", styles['Title']))
+    content.append(Paragraph("CERTIFICATE OF ACHIEVEMENT", styles["Title"]))
     content.append(Spacer(1, 20))
 
-    content.append(Paragraph("This is to certify that", styles['Normal']))
+    content.append(Paragraph("This is to certify that", styles["Normal"]))
     content.append(Spacer(1, 10))
 
-    content.append(Paragraph(f"<b>{name}</b>", styles['Heading2']))
+    content.append(Paragraph(f"<b>{name}</b>", styles["Heading2"]))
     content.append(Spacer(1, 10))
 
-    content.append(Paragraph("has successfully participated in", styles['Normal']))
+    content.append(Paragraph("has participated in", styles["Normal"]))
     content.append(Spacer(1, 10))
 
-    content.append(Paragraph("Arasutech Global Handwriting Competition 2026", styles['Normal']))
+    content.append(Paragraph("Arasutech Global Handwriting Contest 2026", styles["Normal"]))
     content.append(Spacer(1, 30))
 
-    content.append(Paragraph("Authorized Signature", styles['Normal']))
+    content.append(Paragraph("Authorized Signature", styles["Normal"]))
 
     doc.build(content)
-
     return file_path
 
-# ---------------- SEND CERTIFICATE ---------------- #
+# ================= EMAIL CERTIFICATE ================= #
 
-def send_certificate(to_email, name, file_path):
+def send_certificate(email, name, file_path):
     msg = MIMEMultipart()
     msg['From'] = SENDER_EMAIL
-    msg['To'] = to_email
-    msg['Subject'] = "Your Certificate - Arasutechcontests"
+    msg['To'] = email
+    msg['Subject'] = "Your Certificate"
 
-    body = f"Dear {name},\n\nPlease find your certificate attached.\n\nRegards,\nArasutechcontests Team"
+    body = f"Dear {name},\n\nPlease find your certificate attached."
     msg.attach(MIMEText(body, 'plain'))
 
     with open(file_path, "rb") as f:
-        part = MIMEBase('application', 'octet-stream')
+        part = MIMEBase("application", "octet-stream")
         part.set_payload(f.read())
         encoders.encode_base64(part)
-        part.add_header('Content-Disposition', f'attachment; filename="{name}.pdf"')
+        part.add_header("Content-Disposition", f"attachment; filename={name}.pdf")
         msg.attach(part)
 
-    with smtplib.SMTP('smtp.gmail.com', 587) as server:
+    with smtplib.SMTP("smtp.gmail.com", 587) as server:
         server.starttls()
         server.login(SENDER_EMAIL, SENDER_PASSWORD)
         server.send_message(msg)
 
-# ---------------- ROUTES ---------------- #
+# ================= ROUTES ================= #
 
 @app.route('/')
 def home():
-    return render_template('home.html')
-
-@app.route('/competitions')
-def competitions():
-    return render_template('competitions.html')
-
-@app.route('/about')
-def about():
-    return render_template('about.html')
-
-# ---------------- REGISTER ---------------- #
+    return render_template("home.html")
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -172,61 +133,83 @@ def register():
         filepath = os.path.join(UPLOAD_FOLDER, filename)
         file.save(filepath)
 
-        # Save to DB
-        conn = sqlite3.connect('database.db')
+        conn = get_db()
         c = conn.cursor()
-        c.execute(
-            "INSERT INTO participants (name, grade, school, email, filename, cert_file) VALUES (?, ?, ?, ?, ?, ?)",
-            (name, grade, school, email, filename, "")
-        )
+
+        c.execute("""
+            INSERT INTO participants (name, grade, school, email, filename, cert_file)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (name, grade, school, email, filename, ""))
+
         conn.commit()
         conn.close()
 
-        # Send email
         send_email(email, name)
 
-        # 🔥 Redirect to Payment Link (replace with your Razorpay link)
-        payment_link = f"https://rzp.io/rzp/spGbyfRa"
-        return redirect(payment_link)
+        return redirect("https://rzp.io/rzp/spGbyfRa")
 
-    return render_template('register.html')
+    return render_template("register.html")
 
-# ---------------- ADMIN ---------------- #
+# ================= ADMIN ================= #
 
 @app.route('/admin')
 def admin():
-    conn = sqlite3.connect('database.db')
+    key = request.args.get("key")
+    if key != "arasutech@2026":
+        return "Unauthorized"
+
+    conn = get_db()
     c = conn.cursor()
-    c.execute("SELECT * FROM participants")
+    c.execute("SELECT * FROM participants ORDER BY id DESC")
     data = c.fetchall()
     conn.close()
 
-    return render_template('admin.html', data=data)
+    return render_template("admin.html", data=data)
 
-# ---------------- GENERATE CERTIFICATE ---------------- #
+# ================= EXPORT ================= #
+
+@app.route('/download')
+def download():
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT name, grade, school, email FROM participants")
+    rows = c.fetchall()
+    conn.close()
+
+    df = pd.DataFrame(rows, columns=["Name", "Grade", "School", "Email"])
+    file_path = "registrations.xlsx"
+    df.to_excel(file_path, index=False)
+
+    return send_file(file_path, as_attachment=True)
+
+# ================= GENERATE CERT ================= #
 
 @app.route('/generate/<int:id>')
 def generate(id):
-    conn = sqlite3.connect('database.db')
+    conn = get_db()
     c = conn.cursor()
-    c.execute("SELECT name, email FROM participants WHERE id=?", (id,))
+
+    c.execute("SELECT name, email FROM participants WHERE id=%s", (id,))
     user = c.fetchone()
 
     name, email = user
 
     cert_path = generate_certificate(name)
 
-    # update DB
-    c.execute("UPDATE participants SET cert_file=? WHERE id=?", (cert_path, id))
+    c.execute("""
+        UPDATE participants
+        SET cert_file=%s, cert_status='generated'
+        WHERE id=%s
+    """, (cert_path, id))
+
     conn.commit()
     conn.close()
 
-    # send certificate email
     send_certificate(email, name, cert_path)
 
-    return f"Certificate generated and sent to {name}"
+    return f"Certificate sent to {name}"
 
-# ---------------- RUN ---------------- #
+# ================= RUN ================= #
 
-if __name__ == '__main__':
-    app.run(debug=True, use_reloader=False)
+if __name__ == "__main__":
+    app.run(debug=True)
