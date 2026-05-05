@@ -51,7 +51,7 @@ SENDER_PASSWORD = os.getenv("SENDER_PASSWORD")
 
 def send_email_async(to_email, name):
     try:
-       message = f"""
+        message = f"""
 Dear {name},
 
 🎉 Thank you for registering for Arasutechcontests.
@@ -74,7 +74,7 @@ Arasutechcontests Team
 """
 
         msg = MIMEText(message)
-        msg['Subject'] = "Registration Successful - Arasutechcontests"
+        msg['Subject'] = "Registration Received - Payment Pending"
         msg['From'] = SENDER_EMAIL
         msg['To'] = to_email
 
@@ -85,8 +85,7 @@ Arasutechcontests Team
 
     except Exception as e:
         print("Email failed:", e)
-
-
+        
 def send_email(to_email, name):
     threading.Thread(target=send_email_async, args=(to_email, name)).start()
 
