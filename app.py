@@ -187,7 +187,7 @@ def register():
         send_email(email, name)
 
         # 🔥 Redirect to Payment Link (replace with your Razorpay link)
-        payment_link = f"https://rzp.io/rzp/UcnDezR1"
+        payment_link = f"https://rzp.io/rzp/EC6Q4Yi"
         return redirect(payment_link)
 
     return render_template('register.html')
