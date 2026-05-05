@@ -51,17 +51,26 @@ SENDER_PASSWORD = os.getenv("SENDER_PASSWORD")
 
 def send_email_async(to_email, name):
     try:
-        message = f"""
+       message = f"""
 Dear {name},
 
-🎉 Congratulations!
+🎉 Thank you for registering for Arasutechcontests.
 
-You have successfully registered for Arasutechcontests.
+We have received your registration successfully.
 
-Please complete your payment to confirm your participation.
+💰 Initial payment of ₹1 is for testing/demo purpose.
+
+⚠️ To confirm your participation:
+Please complete the remaining registration amount.
+
+Your entry will be considered valid only after full payment is completed.
+
+We will contact you shortly with further instructions.
 
 Regards,
 Arasutechcontests Team
+📧 arasutechcontests@gmail.com
+📞 9092196653
 """
 
         msg = MIMEText(message)
