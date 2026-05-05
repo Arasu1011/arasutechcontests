@@ -43,11 +43,15 @@ init_db()
 
 # ---------------- EMAIL ---------------- #
 
-SENDER_EMAIL = "arasutechcontests@gmail.com"
-SENDER_PASSWORD = "nuldhksczbevbryz"
+import threading
+import os
 
-def send_email(to_email, name):
-    message = f"""
+SENDER_EMAIL = os.getenv("SENDER_EMAIL")
+SENDER_PASSWORD = os.getenv("SENDER_PASSWORD")
+
+def send_email_async(to_email, name):
+    try:
+        message = f"""
 Dear {name},
 
 🎉 Congratulations!
@@ -60,15 +64,22 @@ Regards,
 Arasutechcontests Team
 """
 
-    msg = MIMEText(message)
-    msg['Subject'] = "Registration Successful - Arasutechcontests"
-    msg['From'] = SENDER_EMAIL
-    msg['To'] = to_email
+        msg = MIMEText(message)
+        msg['Subject'] = "Registration Successful - Arasutechcontests"
+        msg['From'] = SENDER_EMAIL
+        msg['To'] = to_email
 
-    with smtplib.SMTP('smtp.gmail.com', 587) as server:
-        server.starttls()
-        server.login(SENDER_EMAIL, SENDER_PASSWORD)
-        server.send_message(msg)
+        with smtplib.SMTP('smtp.gmail.com', 587, timeout=10) as server:
+            server.starttls()
+            server.login(SENDER_EMAIL, SENDER_PASSWORD)
+            server.send_message(msg)
+
+    except Exception as e:
+        print("Email failed:", e)
+
+
+def send_email(to_email, name):
+    threading.Thread(target=send_email_async, args=(to_email, name)).start()
 
 # ---------------- CERTIFICATE ---------------- #
 
