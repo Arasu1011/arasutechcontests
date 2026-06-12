@@ -13,18 +13,19 @@ import pandas as pd
 
 app = Flask(__name__)
 
-UPLOAD_FOLDER = "uploads"
-CERT_FOLDER = "certificates"
+UPLOAD_FOLDER = "/tmp/uploads"
+CERT_FOLDER = "/tmp/certificates"
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(CERT_FOLDER, exist_ok=True)
 
 # ================= DATABASE (SUPABASE POSTGRES) ================= #
-import psycopg2
+
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 def get_db():
     return psycopg2.connect(
-        "postgresql://postgres.rngdjfuywdsyxrhbyvxn:Arasu%401011%23vinay@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres",
+        DATABASE_URL,
         sslmode="require"
     )
 # ================= EMAIL ================= #
