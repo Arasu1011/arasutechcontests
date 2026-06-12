@@ -21,7 +21,7 @@ os.makedirs(CERT_FOLDER, exist_ok=True)
 
 # ================= DATABASE ================= #
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = os.getenv("postgresql://postgres:Arasu%401011%23vinay@db.rngdjfuywdsyxrhbyvxn.supabase.co:5432/postgres")
 
 def get_db():
     return psycopg2.connect(DATABASE_URL, sslmode="require")
