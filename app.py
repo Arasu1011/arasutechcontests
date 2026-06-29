@@ -210,7 +210,20 @@ def download():
 @app.route("/health")
 def health():
     return "OK"
-
+@app.route("/test-db")
+def test_db():
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        c.execute("""
+            INSERT INTO participants (name, grade, school, email, filename, cert_file)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, ("Test Student", "5", "Test School", "test@example.com", "", ""))
+        conn.commit()
+        conn.close()
+        return "DB insert success"
+    except Exception as e:
+        return f"DB insert failed: {e}"
 
 if __name__ == "__main__":
     app.run(debug=True)
